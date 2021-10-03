@@ -37,13 +37,17 @@ def svm_loss_naive(W, X, y, reg):
             margin = scores[j] - correct_class_score + 1  # note delta = 1
             if margin > 0:
                 loss += margin
+                dW[:, y[i]] += -X[i]
+                dW[:, j] += X[i]
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
     loss /= num_train
+    dW /= num_train
 
     # Add regularization to the loss.
     loss += reg * np.sum(W * W)
+    dW += 2*reg*W
 
     #############################################################################
     # TODO:                                                                     #
@@ -54,9 +58,7 @@ def svm_loss_naive(W, X, y, reg):
     # code above to compute the gradient.                                       #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
-
+    
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     return loss, dW
@@ -77,8 +79,29 @@ def svm_loss_vectorized(W, X, y, reg):
     # result in loss.                                                           #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    num_classes = W.shape[1]
+    num_train = X.shape[0]
+    scores = X.dot(W)
+    correct_class_score = scores[list(range(num_train)), y][:, np.newaxis]
+    margin = scores - correct_class_score + np.ones(scores.shape)
+    margin[margin<0] = 0
+    loss = np.sum(margin)
+    # We did not exclude the term j==y_i for every row. The contribution of this
+    # term is equal to delta, so the total overcount is delta*num_train
+    loss -= 1*num_train
+    
+    loss /= num_train
+    loss += reg * np.sum(W * W)
 
-    pass
+    margin[list(range(num_train)), y] = 0 # Make zero margin for the correct class
+    margin[margin>0] = 1 # Make positive entries equal to 1 in order to count number of terms in sum
+    pos_margin_cnt = np.sum(margin, axis=1)
+    margin[list(range(num_train)), y] -= pos_margin_cnt
+    dW = X.T.dot(margin)
+
+    dW /= num_train
+    dW += 2*reg*W
+
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -92,8 +115,6 @@ def svm_loss_vectorized(W, X, y, reg):
     # loss.                                                                     #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
