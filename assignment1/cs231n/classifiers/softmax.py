@@ -33,8 +33,25 @@ def softmax_loss_naive(W, X, y, reg):
     # regularization!                                                           #
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    num_train = X.shape[0]
+    num_classes = W.shape[1]
+    for ii in range(num_train):
+        scores = X[ii].dot(W)
+        # Shift the scores for stability first
+        scores -= np.max(scores)
+        prob = np.exp(scores)/np.sum(np.exp(scores))
+        loss += -np.log(prob[y[ii]])
 
-    pass
+        # Gradient
+        for jj in range(num_classes):
+            dW[:, jj] += prob[jj]*X[ii]
+        dW[:, y[ii]] -= X[ii]
+      
+    loss /= num_train
+    dW /= num_train
+
+    loss += reg * np.sum(W * W)
+    dW += 2*reg*W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -59,7 +76,21 @@ def softmax_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    num_train = X.shape[0]
+    scores = X.dot(W)
+    # Shift the scores for stability first
+    scores -= np.max(scores, axis=1)[:, np.newaxis]
+    prob = np.exp(scores)/np.sum(np.exp(scores), axis=1)[:, np.newaxis]
+    loss = np.sum(-np.log(prob[np.arange(0, num_train), y]))
+
+    prob[np.arange(0, num_train), y] -= 1 # "-1" because we have to subtract X for right class
+    dW = X.T.dot(prob)
+      
+    loss /= num_train
+    dW /= num_train
+
+    loss += reg * np.sum(W * W)
+    dW += 2*reg*W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
