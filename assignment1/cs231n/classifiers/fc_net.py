@@ -55,7 +55,16 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        W1 = weight_scale*np.random.randn(input_dim, hidden_dim)
+        W2 = weight_scale*np.random.randn(hidden_dim, num_classes)
+        b1 = np.zeros(hidden_dim)
+        b2 = np.zeros(num_classes)
+
+        self.params['W1'] = W1
+        self.params['W2'] = W2
+        self.params['b1'] = b1
+        self.params['b2'] = b2
+        
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -88,7 +97,13 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        affine, cache_affine = affine_forward(X, 
+                                    self.params['W1'], 
+                                    self.params['b1'])
+        hidden_layer, cache_hidden = relu_forward(affine)
+        scores, cache_scores = affine_forward(hidden_layer, 
+                                    self.params['W2'], 
+                                    self.params['b2'])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -112,8 +127,23 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dscores = softmax_loss(scores, y)
+        loss += 0.5*self.reg * (np.sum(self.params['W1']*self.params['W1']) + \
+                            np.sum(self.params['W2']*self.params['W2'])  )
+        # last affine
+        dscor_hidd, dw2, db2 = affine_backward(dscores, cache_scores)
+        dw2 += self.reg*self.params['W2']
+        # reLU 
+        dscor_hidd = relu_backward(dscor_hidd, hidden_layer)
+        # The first affine
+        _, dw1, db1 = affine_backward(dscor_hidd, cache_affine)
+        dw1 += self.reg*self.params['W1']
 
+        grads = {'W1':dw1, 
+                 'b1':db1, 
+                 'W2':dw2, 
+                 'b2':db2
+        }
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #

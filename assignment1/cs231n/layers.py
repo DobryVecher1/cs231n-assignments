@@ -27,8 +27,10 @@ def affine_forward(x, w, b):
     # will need to reshape the input into rows.                               #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    N = x.shape[0]
+    num_columns = np.prod(x.shape[1:])
+    x_matr = x.reshape(N, num_columns)
+    out = x_matr.dot(w)+b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -60,9 +62,17 @@ def affine_backward(dout, cache):
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+    D = np.prod(x.shape[1:])
+    N = x.shape[0]
+    M = b.shape
 
-    pass
+    dx = dout.dot(w.T)
+    dx = dx.reshape(N, *x.shape[1:])
+  
+    x = x.reshape(N, D)
+    dw = x.T.dot(dout)
 
+    db = dout.T.dot(np.ones((N)))
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
     #                             END OF YOUR CODE                            #
@@ -87,7 +97,7 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    out = np.maximum(0, x)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -114,7 +124,7 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = np.int32(x>0)*dout
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -145,7 +155,28 @@ def svm_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    loss = 0.0
+    num_train = x.shape[0]
+
+    scores = np.copy(x)
+    correct_class_score = scores[list(range(num_train)), y][:, np.newaxis]
+    margin = scores - correct_class_score + np.ones(scores.shape)
+    margin[margin<0] = 0
+    loss = np.sum(margin)
+    # We did not exclude the term j==y_i for every row. The contribution of this
+    # term is equal to delta, so the total overcount is delta*num_train
+    loss -= 1*num_train
+    
+    loss /= num_train
+
+    margin[list(range(num_train)), y] = 0 # Make zero margin for the correct class
+    margin[margin>0] = 1 # Make positive entries equal to 1 in order to count number of terms in sum
+    pos_margin_cnt = np.sum(margin, axis=1)
+    #margin[list(range(num_train)), y] -= pos_margin_cnt
+    dx = margin*10
+
+    dx /= num_train
+
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -176,7 +207,22 @@ def softmax_loss(x, y):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    loss = 0.0
+
+    num_train = x.shape[0]
+    scores = np.copy(x)
+    # Shift the scores for stability first
+    scores -= np.max(scores, axis=1)[:, np.newaxis]
+    prob = np.exp(scores)/np.sum(np.exp(scores), axis=1)[:, np.newaxis]
+    loss = np.sum(-np.log(prob[np.arange(0, num_train), y]))
+    
+
+    dx = prob
+    dx[range(num_train), y] -= 1
+      
+    loss /= num_train
+    dx /= num_train
+
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
